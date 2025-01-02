@@ -1,19 +1,38 @@
-import { Link, Form } from "@remix-run/react";
-import { useState } from "react";
+import React, { useState } from "react";
+import { useLoaderData, Link, Form } from "@remix-run/react";
 
-export default function Navbar({ user }: { user: any }) {
+const Navbar: React.FC = () => {
+  const data = useLoaderData<{
+    user: {
+      data: {
+        created_at: string;
+        email: string;
+        email_verified_at: string | null;
+        google_id: string | null;
+        id: number;
+        image: string;
+        name: string;
+        role: string;
+        super: string;
+        updated_at: string;
+      }[];
+      message: string;
+      success: boolean;
+    };
+  }>();
+
+  const user = data.user.data[0];
   const [open, setOpen] = useState(false);
 
   return (
     <nav className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-md">
-      {/* Primary Navigation Menu */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             {/* Logo */}
             <Link to="/dashboard">
               <img
-                src="/path-to-logo.png" // Actualitza amb el camí del teu logo
+                src="/path-to-logo.png"
                 alt="Logo"
                 className="h-10 w-auto"
               />
@@ -34,7 +53,7 @@ export default function Navbar({ user }: { user: any }) {
                 Sol·licituds de Cançons
               </Link>
               <span className="text-gray-600 dark:text-gray-400">
-                {/* Rol actual del Usuari: {user.role} */}
+                Rol actual del Usuari: {user.role === "dj" ? "DJ" : "Usuari"}
               </span>
             </div>
           </div>
@@ -42,17 +61,16 @@ export default function Navbar({ user }: { user: any }) {
           {/* User Settings Dropdown */}
           <div className="hidden sm:flex items-center space-x-4">
             <img
-              // src={`/storage/${user.image}`} // Ruta de la imatge de perfil
+              src={user.image}
               alt="Profile"
               className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600"
             />
-
             <div className="relative">
               <button
                 onClick={() => setOpen(!open)}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition"
               >
-                {/* <span>{user.name}</span> */}
+                <span>{user.name}</span>
                 <svg
                   className="ml-2 h-4 w-4"
                   xmlns="http://www.w3.org/2000/svg"
@@ -80,10 +98,10 @@ export default function Navbar({ user }: { user: any }) {
                       type="submit"
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
                     >
-                      {/* {user.role === "dj" ? "Canviar a Usuari" : "Canviar a DJ"} */}
+                      {user.role === "dj" ? "Canviar a Usuari" : "Canviar a DJ"}
                     </button>
                   </Form>
-                  {/* {user.super === "admin" && (
+                  {user.super === "admin" && (
                     <Link
                       to="/admin/dashboard"
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
@@ -91,14 +109,6 @@ export default function Navbar({ user }: { user: any }) {
                       Admin Dashboard
                     </Link>
                   )}
-                  {user.role === "dj" && (
-                    <Link
-                      to="/dj/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                    >
-                      DJ Dashboard
-                    </Link>
-                  )} */}
                   <Form method="post" action="/logout">
                     <button
                       type="submit"
@@ -110,31 +120,6 @@ export default function Navbar({ user }: { user: any }) {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Hamburger Menu (for mobile) */}
-          <div className="-me-2 flex items-center sm:hidden">
-            <button
-              onClick={() => setOpen(!open)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none transition duration-150 ease-in-out"
-            >
-              <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                <path
-                  className={open ? "hidden" : "inline-flex"}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-                <path
-                  className={open ? "inline-flex" : "hidden"}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
@@ -159,13 +144,15 @@ export default function Navbar({ user }: { user: any }) {
           <div className="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
             <div className="px-4">
               <div className="font-medium text-base text-gray-800 dark:text-gray-200">
-                {/* {user.name} */}
+                {user.email}
               </div>
-              {/* <div className="font-medium text-sm text-gray-500">{user.email}</div> */}
+              <div className="font-medium text-sm text-gray-500">{user.role}</div>
             </div>
           </div>
         </div>
       )}
     </nav>
   );
-}
+};
+
+export default Navbar;
