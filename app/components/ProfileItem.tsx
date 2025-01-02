@@ -1,31 +1,23 @@
 import React from 'react';
 
 interface ProfileItemProps {
-  profile: {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    image: string;
-    created_at: string;
-  };
+  profile: any;
   onSelect: (profile: any) => void;
 }
 
 const ProfileItem: React.FC<ProfileItemProps> = ({ profile, onSelect }) => {
   return (
-    <li>
+    <li className="py-4 flex items-center justify-between">
       <div>
-        <img
-          src={`path-to-your-images/${profile.image}`}
-          alt={profile.name}
-          style={{ width: '50px', height: '50px', borderRadius: '50%' }}
-        />
-        <strong>{profile.name}</strong> - {profile.email}
-        <p>Rol: {profile.role}</p>
-        <p>Creado en: {new Date(profile.created_at).toLocaleString()}</p>
-        <button onClick={() => onSelect(profile)}>Seleccionar DJ</button>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{profile.name}</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{profile.email}</p>
       </div>
+      <button
+        onClick={() => onSelect(profile)}
+        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition ease-in-out duration-200"
+      >
+        Selecciona
+      </button>
     </li>
   );
 };

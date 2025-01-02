@@ -33,19 +33,30 @@ const SearchComponent: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2>Buscador de Perfiles</h2>
-      <form onSubmit={handleSearch}>
-        <input
-          type="text"
-          value={query}
-          onChange={handleSearchChange}
-          placeholder="Buscar por nombre o email"
-        />
-        <button type="submit">Buscar</button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <ProfileList profiles={results} onSelect={handleSelectDj} />
+    <div className="py-12 max-w-4xl mx-auto">
+      <div className="bg-white dark:bg-gray-900 overflow-hidden shadow-lg rounded-lg">
+        <div className="p-6">
+          <form onSubmit={handleSearch} className="flex items-center space-x-4">
+            <input
+              type="text"
+              value={query}
+              onChange={handleSearchChange}
+              placeholder="Buscar per nom o email"
+              className="flex-grow px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-300"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition ease-in-out duration-200"
+            >
+              Cercar
+            </button>
+          </form>
+          {error && <p className="text-red-500 mt-4">{error}</p>}
+        </div>
+        <div className="p-6">
+          <ProfileList profiles={results} onSelect={handleSelectDj} />
+        </div>
+      </div>
     </div>
   );
 };

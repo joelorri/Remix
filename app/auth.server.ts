@@ -1,4 +1,4 @@
-import { createCookieSessionStorage } from '@remix-run/node';
+import { createCookieSessionStorage, LoaderFunction, json } from '@remix-run/node';
 import { redirect } from '@remix-run/react';
 import axios, { AxiosError } from 'axios';
 import { ProfileSearchResult } from '../types/interfaces';
@@ -142,4 +142,26 @@ export const getXsrfToken = (): string => {
 export const getSelectedDj = (): ProfileSearchResult | null => {
     const djData = getCookieValue('selected_dj');
     return djData ? JSON.parse(djData) : null;
+};
+
+
+
+export const loader: LoaderFunction = async ({ request }) => {
+    const res = await fetch(`http://localhost/api/user`, {
+        credentials: 'include',
+        headers: {
+            Cookie: request.headers.get('Cookie') || '',
+        },
+    });
+
+    if (res.status !== 200) {
+        return redirect('/login'); // Si l'usuari no està loguejat, redirigim a login
+    }
+
+    const user = await res.json();
+    if (!user) {
+        return redirect('/login');
+    }
+
+    return json({ user });
 };
