@@ -1,10 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { redirect, useNavigate, json } from 'react-router-dom';
-import { getSelectedDj,submitRequest} from '../auth.client';
+import { redirect, useNavigate, json, LoaderFunction } from 'react-router-dom';
+import { getSelectedDj} from '../auth.client';
 import DjInfo from '../components/DjInfo';
 import SearchForm, { Track as SearchFormTrack } from '../components/SearchForm';
 import TrackList from '../components/TrackList';
 import { ShowErrors } from 'types/interfaces';
+export const loader: LoaderFunction = async ({ request }) => {
+  const res = await fetch(`http://localhost/api/user`, {
+    credentials: 'include',
+    headers: {
+      Cookie: request.headers.get('Cookie') || '',
+    },
+  });
+
+  if (res.status !== 200) {
+    return redirect('/login'); 
+    
+  }
+
+  const user = await res.json();
+  if (!user) {
+    return redirect('/login');
+  }
+
+  return json({ user });
+};
 
 
 const FormDj: React.FC = () => {
@@ -68,7 +88,26 @@ const FormDj: React.FC = () => {
       };
       console.log('payload', payload);
     try {
-        await submitRequest(payload);
+      const token = getCookieValue('authToken'); 
+      const xsrf = getCookieValue('XSRF-TOKEN');
+      console.log('token', token);
+      
+      const response = await fetch('http://localhost/api/requests/stored', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': xsrf, 
+        },
+        body: JSON.stringify(payload),
+      });
+    
+      if (!response.ok) {
+        throw new Error('Error en enviar la petició.');
+      }
+    
+      return response.json();
         return redirect('/search');
     } catch (error) {
         console.error('error', error);
@@ -78,8 +117,15 @@ const FormDj: React.FC = () => {
       setError('Hi ha hagut un error en enviar les peticions.');
     }
   };
+  const getCookieValue = (name: string): string => {
+    const cookies = document.cookie.split(';');
+    const cookie = cookies.find(cookie => cookie.trim().startsWith(`${name}=`));
+    return cookie?.split('=')[1] || ''; // Retorna el valor o una cadena buida
+  };
+
 
   return (
+    
     <div className="p-6 max-w-4xl mx-auto text-gray-900 dark:text-gray-100">
       <h2 className="text-xl font-semibold text-center mb-4">Formulari de Cerca DJ</h2>
       {error && <p className="text-red-500 text-center">{error}</p>}

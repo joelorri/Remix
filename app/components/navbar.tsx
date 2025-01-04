@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useLoaderData, Link, Form } from "@remix-run/react";
+import { useLoaderData, Link } from "@remix-run/react";
+import axios from "axios";
 
 const Navbar: React.FC = () => {
   const data = useLoaderData<{
@@ -21,14 +22,17 @@ const Navbar: React.FC = () => {
     };
   }>();
 
-  const user = data.user.data[0];
-  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(data.user.data[0]);
+  const [loading, setLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false); // State for managing mobile menu
+
+  const toggleMenu = () => setMenuOpen(!menuOpen);
 
   return (
     <nav className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-4">
             {/* Logo */}
             <Link to="/dashboard">
               <img
@@ -39,7 +43,7 @@ const Navbar: React.FC = () => {
             </Link>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden sm:flex space-x-8">
+            <div className="hidden md:flex space-x-6">
               <Link
                 to="/dashboard"
                 className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
@@ -58,8 +62,31 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
+          {/* Mobile Menu Button */}
+          <div className="flex items-center md:hidden">
+            <button
+              onClick={toggleMenu}
+              className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                className="h-6 w-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+
           {/* User Settings Dropdown */}
-          <div className="hidden sm:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4">
             <img
               src={user.image}
               alt="Profile"
@@ -67,8 +94,8 @@ const Navbar: React.FC = () => {
             />
             <div className="relative">
               <button
-                onClick={() => setOpen(!open)}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition"
+                disabled={loading}
               >
                 <span>{user.name}</span>
                 <svg
@@ -85,72 +112,54 @@ const Navbar: React.FC = () => {
                 </svg>
               </button>
 
-              {open && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md">
+                <Link
+                  to="/profile/edit"
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
+                >
+                  Profile
+                </Link>
+
+                {user.super === "admin" && (
                   <Link
-                    to="/profile/edit"
+                    to="/admin/dashboard"
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
                   >
-                    Profile
+                    Admin Dashboard
                   </Link>
-                  <Form method="post" action="/profile/toggle-role">
-                    <button
-                      type="submit"
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                    >
-                      {user.role === "dj" ? "Canviar a Usuari" : "Canviar a DJ"}
-                    </button>
-                  </Form>
-                  {user.super === "admin" && (
-                    <Link
-                      to="/admin/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                    >
-                      Admin Dashboard
-                    </Link>
-                  )}
-                  <Form method="post" action="/logout">
-                    <button
-                      type="submit"
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                    >
-                      Log Out
-                    </button>
-                  </Form>
-                </div>
-              )}
+                )}
+                <button
+                  onClick={() => axios.post("/logout", {}, { withCredentials: true })}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
+                >
+                  Log Out
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Responsive Navigation Menu */}
-      {open && (
-        <div className="sm:hidden">
-          <div className="pt-2 pb-3 space-y-1">
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-white dark:bg-gray-800 space-y-2 mt-4">
             <Link
               to="/dashboard"
-              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
             >
               Dashboard
             </Link>
             <Link
               to="/song-requests"
-              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
             >
               Sol·licituds de Cançons
             </Link>
+            <span className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+              Rol actual del Usuari: {user.role === "dj" ? "DJ" : "Usuari"}
+            </span>
           </div>
-          <div className="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-            <div className="px-4">
-              <div className="font-medium text-base text-gray-800 dark:text-gray-200">
-                {user.email}
-              </div>
-              <div className="font-medium text-sm text-gray-500">{user.role}</div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 };

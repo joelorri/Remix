@@ -13,7 +13,8 @@ export const loader: LoaderFunction = async ({ request }) => {
   });
 
   if (res.status !== 200) {
-    return redirect('/login'); // Si l'usuari no està loguejat, redirigim a login
+    return redirect('/login'); 
+    
   }
 
   const user = await res.json();

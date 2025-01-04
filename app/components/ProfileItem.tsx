@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface ProfileItemProps {
-  profile: any;
-  onSelect: (profile: any) => void;
+  profile: { name: string; email: string };
+  onSelect: (profile: { name: string; email: string }) => void;
 }
 
 const ProfileItem: React.FC<ProfileItemProps> = ({ profile, onSelect }) => {
