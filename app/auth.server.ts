@@ -16,30 +16,35 @@ export const sessionStorage = createCookieSessionStorage({
   },
 });
 
-// Login function
-export async function login({ email, password }: SignupInput) {
-  try {
-    const response = await axios.post(
-      `${apiUrl}/api/login`,
-      { email, password },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        withCredentials: true,
-      }
-    );
 
-    if (response.status === 200 && response.data?.token) {
-      const userId = response.data.user.id;
-      const authToken = response.data.token;
-      return await createUserSession(userId, authToken, '/home');
-    } else {
-      throw new Error('Invalid login credentials');
+export async function login({ email, password }: { email: string; password: string }) {
+  try {
+    const response = await fetch("http://localhost/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error durant el login.");
     }
-  } catch (error) {
-    throw new ShowErrors({ title: 'Invalid login credentials', code: '401' });
+
+    const { token } = await response.json();
+
+    const session = await sessionStorage.getSession();
+    session.set("authToken", token);
+
+    const cookieHeader = await sessionStorage.commitSession(session);
+    console.log("Cookie header:", cookieHeader);
+    // Redirigeix a /home amb la cookie del authToken
+    return redirect("/home", {
+      headers: {
+        "Set-Cookie": cookieHeader,
+      },
+    });
+  } catch (err) {
+    console.error("Error al login:", err);
+    throw new Error("Credencials incorrectes o problema del servidor.");
   }
 }
 
@@ -101,6 +106,7 @@ export async function fetchUserData(request: Request) {
   return response.data;
 }
 
+
 // Get auth token from request headers
 export async function getAuthToken(request: Request): Promise<string | null> {
   const cookieHeader = request.headers.get('Cookie');
@@ -108,6 +114,7 @@ export async function getAuthToken(request: Request): Promise<string | null> {
 
   const session = await sessionStorage.getSession(cookieHeader);
   const authToken = session.get('authToken');
+  console.log('authToken', authToken);
   return authToken || null;
 }
 
@@ -128,7 +135,7 @@ export async function logout() {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       withCredentials: true,
     });
-
+    console.log('Resposta del login:', response.data);
     return redirect('/login', {
       headers: { 'Set-Cookie': 'authToken=; Max-Age=0; Path=/' },
     });

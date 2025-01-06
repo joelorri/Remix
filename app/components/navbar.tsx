@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             {/* Logo */}
-            <Link to="/dashboard">
+            <Link to="/home">
               <img
                 src="/path-to-logo.png"
                 alt="Logo"
@@ -45,7 +45,7 @@ const Navbar: React.FC = () => {
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex space-x-6">
               <Link
-                to="/dashboard"
+                to="/home"
                 className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
               >
                 Dashboard
@@ -122,7 +122,7 @@ const Navbar: React.FC = () => {
 
                 {user.super === "admin" && (
                   <Link
-                    to="/admin/dashboard"
+                    to="/admin/home"
                     className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
                   >
                     Admin Dashboard
@@ -143,7 +143,7 @@ const Navbar: React.FC = () => {
         {menuOpen && (
           <div className="md:hidden bg-white dark:bg-gray-800 space-y-2 mt-4">
             <Link
-              to="/dashboard"
+              to="/home"
               className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
             >
               Dashboard

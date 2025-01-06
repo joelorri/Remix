@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { redirect, useNavigate, json, LoaderFunction } from 'react-router-dom';
-import { getSelectedDj} from '../auth.client';
-import DjInfo from '../components/DjInfo';
-import SearchForm, { Track as SearchFormTrack } from '../components/SearchForm';
-import TrackList from '../components/TrackList';
-import { ShowErrors } from 'types/interfaces';
+import React, { useState, useEffect } from "react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import DjInfo from "../components/DjInfo";
+import SearchForm, { Track as SearchFormTrack } from "../components/SearchForm";
+import TrackList from "../components/TrackList";
+import Navbar from "~/components/navbar";
+import { LoaderFunction, redirect } from "@remix-run/node";
+import { getAuthToken } from "~/auth.server";
+import { json } from 'react-router-dom';
 export const loader: LoaderFunction = async ({ request }) => {
+  await getAuthToken(request);
   const res = await fetch(`http://localhost/api/user`, {
     credentials: 'include',
     headers: {
@@ -25,107 +28,90 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   return json({ user });
 };
-
-
 const FormDj: React.FC = () => {
+   const data = useLoaderData<{
+       user: {
+         data: {
+           created_at: string;
+           email: string;
+           email_verified_at: string | null;
+           google_id: string | null;
+           id: number;
+           image: string;
+           name: string;
+           role: string;
+           super: string;
+           updated_at: string;
+         }[];
+         message: string;
+         success: boolean;
+       };
+     }>();
+     const user = data.user.data[0];
+  
   const [tracks, setTracks] = useState<SearchFormTrack[]>([]);
   const [selectedTracks, setSelectedTracks] = useState<{ [id: string]: string }>({});
   const [comments, setComments] = useState<{ [id: string]: string }>({});
-  const [error, setError] = useState<string>('');
+  const [selectedDj, setSelectedDj] = useState<any>(null);
+  const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  interface Dj {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-    image: string;
-    created_at: string;
-  }
-
-  const [selectedDj, setSelectedDj] = useState<Dj | null>(null);
   const navigate = useNavigate();
 
+  // Funció per obtenir el valor d'una cookie pel nom
+  const getCookieValue = (name: string): string | null => {
+    const cookies = document.cookie.split("; ");
+    const cookie = cookies.find((c) => c.startsWith(`${name}=`));
+    return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
+  };
+
   useEffect(() => {
-    const dj = getSelectedDj();
-    if (dj) {
-      setSelectedDj(dj);
+    const djCookie = getCookieValue("selected_dj");
+    if (djCookie) {
+      try {
+        const dj = JSON.parse(djCookie);
+        setSelectedDj(dj);
+      } catch (e) {
+        setError("Error en llegir les dades del DJ seleccionat.");
+        console.error("Error en analitzar la cookie de DJ:", e);
+      }
     } else {
-      setError('No s\'ha seleccionat cap DJ. Redirigint a la pàgina de cerca...');
-      setTimeout(() => navigate('/search'), 3000);
+      setError("No s'ha seleccionat cap DJ. Redirigint a la pàgina de cerca...");
+      setTimeout(() => navigate("/home"), 3000);
     }
   }, [navigate]);
 
-  const handleSubmitRequest = async () => {
+  const handleSubmit = () => {
     if (!selectedDj || !Object.keys(selectedTracks).length) {
-      setError('Si us plau, selecciona com a mínim una cançó.');
+      setError("Si us plau, selecciona com a mínim una cançó.");
       return;
     }
 
-    try {
-      const trackIds = Object.keys(selectedTracks);
-      const songs = trackIds.map((_, index) => index + 1);
-
-      const commentsMapped: Record<number, string> = trackIds.reduce((acc: Record<number, string>, trackId, index) => {
-        acc[songs[index]] = comments[trackId] || '';
+    const trackIds = Object.keys(selectedTracks);
+    const payload = {
+      dj_id: selectedDj.id,
+      songs: trackIds.map((_, index) => index + 1),
+      comments: trackIds.reduce((acc, trackId) => {
+        acc[trackId] = comments[trackId] || "";
         return acc;
-      }, {});
-
-      const tracksMapped: { [key: string]: string } = trackIds.reduce((acc: { [key: string]: string }, trackId, index) => {
-        const track = tracks.find(t => t.id === trackId);
+      }, {}),
+      tracks: trackIds.reduce((acc, trackId) => {
+        const track = tracks.find((t) => t.id === trackId);
         if (track) {
-          acc[songs[index]] = track.name;
-          acc[`${songs[index]}_artist`] = track.album.artists[0]?.name || '';
+          acc[trackId] = track.name;
+          acc[`${trackId}_artist`] = track.artist;
         }
         return acc;
-      }, {});
+      }, {}),
+    };
 
-      const payload = {
-        dj_id: selectedDj.id,
-        songs,
-        comments: commentsMapped,
-        tracks: tracksMapped,
-      };
-      console.log('payload', payload);
-    try {
-      const token = getCookieValue('authToken'); 
-      const xsrf = getCookieValue('XSRF-TOKEN');
-      console.log('token', token);
-      
-      const response = await fetch('http://localhost/api/requests/stored', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': xsrf, 
-        },
-        body: JSON.stringify(payload),
-      });
-    
-      if (!response.ok) {
-        throw new Error('Error en enviar la petició.');
-      }
-    
-      return response.json();
-        return redirect('/search');
-    } catch (error) {
-        console.error('error', error);
-        return json({ error: (error as ShowErrors).title }, { status: 401 });
-    }
-    } catch (err) {
-      setError('Hi ha hagut un error en enviar les peticions.');
-    }
+    localStorage.setItem("formPayload", JSON.stringify(payload));
+    navigate("/submit-form-route");
   };
-  const getCookieValue = (name: string): string => {
-    const cookies = document.cookie.split(';');
-    const cookie = cookies.find(cookie => cookie.trim().startsWith(`${name}=`));
-    return cookie?.split('=')[1] || ''; // Retorna el valor o una cadena buida
-  };
-
 
   return (
-    
+    <>
+    <Navbar />  
     <div className="p-6 max-w-4xl mx-auto text-gray-900 dark:text-gray-100">
       <h2 className="text-xl font-semibold text-center mb-4">Formulari de Cerca DJ</h2>
       {error && <p className="text-red-500 text-center">{error}</p>}
@@ -146,12 +132,13 @@ const FormDj: React.FC = () => {
         />
       )}
       <button
-        onClick={handleSubmitRequest}
+        onClick={handleSubmit}
         className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
       >
-        Enviar Petició
+        Continuar
       </button>
     </div>
+    </>
   );
 };
 

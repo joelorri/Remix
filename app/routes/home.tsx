@@ -3,8 +3,10 @@ import { useLoaderData } from '@remix-run/react';
 import { LoaderFunction, json, redirect } from '@remix-run/node';
 import SearchComponent from '../components/SearchComponent';
 import Navbar from '~/components/navbar';
+import { getAuthToken } from '~/auth.server';
 
 export const loader: LoaderFunction = async ({ request }) => {
+  await getAuthToken(request);
   const res = await fetch(`http://localhost/api/user`, {
     credentials: 'include',
     headers: {

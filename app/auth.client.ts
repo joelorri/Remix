@@ -1,4 +1,5 @@
 import axios from "axios";
+import { request } from "node_modules/axios/index.cjs";
 import { ProfileSearchResult } from "types/interfaces";
 
 
@@ -33,25 +34,35 @@ export const listAllCookies = () => {
   return cookieList;
 }
 
-export const getAuthToken = async () => {
-  const cookies = listAllCookies();
-  document.cookie.split(';').forEach((cookie) => console.log(cookie.trim()));
-  const authToken = cookies.find(cookie => cookie.name === 'authToken');
-  return authToken?.value || '';
+
+export async function getAuthToken(request: Request): Promise<string | null> {
+  const cookieHeader = request.headers.get('Cookie');
+  if (!cookieHeader) {
+    console.error('No s\'ha trobat cap cookie al request');
+    return null;
+  }
+
+  const session = await sessionStorage.getSession(cookieHeader)
+  ;
+  const authToken = session.get('authToken');
+
+  console.log('Token d\'autenticació obtingut:', authToken);
+  
+  return authToken || null;
 }
 
-export async function submitRequest(payload: RequestPayload) {
-  const token = getCookieValue('authToken'); // Guarda el token d'autenticació al localStorage
-  const xsrf = getCookieValue('XSRF-TOKEN');
+export async function submitRequest(request: Request, payload: RequestPayload) {
+  // Espera el token d'autenticació
+  const token = await getAuthToken(request);
+
   console.log('token', token);
-  
+
   const response = await fetch('http://localhost/api/requests/stored', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'X-CSRF-TOKEN': xsrf, // Afegeix el token CSRF aquí
     },
     body: JSON.stringify(payload), // Envia el payload com a JSON
   });
@@ -62,6 +73,7 @@ export async function submitRequest(payload: RequestPayload) {
 
   return response.json();
 }
+
 
 // Funció per cercar perfils
 export const searchProfiles = async (query: string) => {
