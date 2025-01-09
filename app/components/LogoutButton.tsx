@@ -1,29 +1,50 @@
-import { Form } from '@remix-run/react';
-import { ActionFunction, json } from '@remix-run/node';
-import { logout } from '~/auth.server';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-export const action: ActionFunction = async () => {
+const LogoutButton: React.FC = () => {
+  
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
     try {
-        // Ejecuta la lógica de logout
-        await logout();
+      setLoading(true); // Start loading state
+      const response = await axios.post(
+        "http://localhost/logout",
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // Include credentials like cookies
+        }
+      );
 
-        // Redirige al usuario a la página de inicio de sesión
-        return logout();
-    } catch (error) {
-        console.error('Logout failed:', error);
+      console.log("Logout response:", response.data);
 
-        // Devuelve un error JSON si ocurre un problema
-        return json(
-            { error: 'Logout failed. Please try again later.' },
-            { status: 500 }
-        );
+      // Clear authentication cookies
+      document.cookie = "authToken=; Max-Age=0; Path=/;";
+
+      // Redirect to login page
+      navigate("/login");
+    } catch (error: unknown) {
+      console.error("Error during logout:", error);
+      alert("Logout failed. Please try again.");
+    } finally {
+      setLoading(false); // Reset loading state
     }
+  };
+
+  return (
+    <button
+      onClick={handleLogout}
+      disabled={loading}
+      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400"
+    >
+      {loading ? "Logging out..." : "Logout"}
+    </button>
+  );
 };
 
-export default function LogoutButton() {
-    return (
-        <Form method="post" action="/logout">
-            <button type="submit">Logout</button>
-        </Form>
-    );
-}
+export default LogoutButton;

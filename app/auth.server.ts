@@ -1,6 +1,5 @@
 import { createCookieSessionStorage, redirect, LoaderFunction, json } from '@remix-run/node';
-import axios, { AxiosError } from 'axios';
-import { SignupInput, ShowErrors, ProfileSearchResult } from 'types/interfaces';
+import axios from 'axios';
 
 const apiUrl = process.env.API_URL;
 
@@ -85,7 +84,7 @@ export async function signup(name: string, username: string, email: string, pass
       throw new Error('Invalid signup credentials');
     }
   } catch (error) {
-    throw new ShowErrors({ title: 'Invalid signup credentials', code: '401' });
+    throw new Error('Invalid signup credentials');
   }
 }
 
@@ -131,7 +130,7 @@ export async function getLoggedUserId(request: Request): Promise<string | null> 
 // Logout function
 export async function logout() {
   try {
-    await axios.post(`${apiUrl}/logout`, {}, {
+    const response = await axios.post(`${apiUrl}/logout`, {}, {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       withCredentials: true,
     });
@@ -152,12 +151,7 @@ export const setCookie = (name: string, value: string, days: number) => {
   return `${name}=${value}; ${expires}; path=/`; // Set the cookie in response
 };
 
-// Fetch the value of a cookie (for server-side usage)
-const getCookieValue = (name: string): string => {
-  const cookies = document.cookie.split(';');
-  const cookie = cookies.find(cookie => cookie.trim().startsWith(`${name}=`));
-  return cookie?.split('=')[1] || ''; // Return value or empty string
-};
+
 
 // Loader function for handling user sessions on initial page load
 export const loader: LoaderFunction = async ({ request }) => {

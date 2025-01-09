@@ -1,4 +1,3 @@
-import React from 'react';
 import { useLoaderData } from '@remix-run/react';
 import { LoaderFunction, json, redirect } from '@remix-run/node';
 import SearchComponent from '../components/SearchComponent';
@@ -6,11 +5,13 @@ import Navbar from '~/components/navbar';
 import { getAuthToken } from '~/auth.server';
 
 export const loader: LoaderFunction = async ({ request }) => {
-  await getAuthToken(request);
-  const res = await fetch(`http://localhost/api/user`, {
+  const auth = await getAuthToken(request);
+  const res = await fetch(`http://localhost/api/user`, { //http://localhost/api/whoami
     credentials: 'include',
     headers: {
       Cookie: request.headers.get('Cookie') || '',
+      Authorization: `Bearer ${auth}`,
+      Accept: 'application/json',
     },
   });
 

@@ -10,7 +10,7 @@ interface SearchFormProps {
   setError: React.Dispatch<React.SetStateAction<string>>;
 }
 
-interface Track {
+export interface Track {
   id: string;
   name: string;
   artist: string;

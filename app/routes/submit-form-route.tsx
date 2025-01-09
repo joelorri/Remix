@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { LoaderFunction, redirect, json } from "react-router-dom";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { getAuthToken } from "~/auth.server";
-import axios from "axios";
+
 
 export const loader: LoaderFunction = async ({ request }) => {
   const authToken = await getAuthToken(request);
@@ -41,53 +41,42 @@ const SubmitFormRoute: React.FC = () => {
   useEffect(() => {
     const submitRequest = async () => {
       const payload = JSON.parse(localStorage.getItem("formPayload") || "{}");
-
+  
+        
       try {
-        // Obtenim el token CSRF del meta tag
-        const csrfToken = document
-          .querySelector('meta[name="csrf-token"]')
-          ?.getAttribute("content");
-
         console.log("authToken:", authToken);
         console.log("payload:", payload);
-        console.log("csrfToken:", csrfToken);
+        // Fetch and await the CSRF token
+        
+        console.log("aurhTokens:",authToken);  
+        const response = await fetch("http://localhost/api/requests/stored", {
+          method: "POST",
+          credentials: 'include', 
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`, // Include the auth token
+          },
 
-        // Fem la petició POST amb Axios
-        const response = await axios.post(
-          "http://localhost/api/requests/stored",
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              "X-CSRF-TOKEN": csrfToken || "", // Token CSRF
-            },
-            withCredentials: true, // Necessari per enviar cookies
-          }
-        );
-
-        console.log("Resultat:", response.data);
-        navigate("/success");
-      } catch (err: any) {
-        if (err.response) {
-          setError(
-            `Error en enviar la petició: ${err.response.data?.message || "Error del servidor"}`
-          );
-        } else if (err.request) {
-          setError("No s'ha rebut cap resposta del servidor.");
-        } else {
-          setError(err.message || "Hi ha hagut un error.");
+          body: JSON.stringify(payload),
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Error del servidor: ${response.statusText}`);
         }
+  
+        console.log("Resultat:", await response.json());
+        navigate("/success");
+      } catch (err) {
+        setError(err.message || "Hi ha hagut un error.");
         console.error("Error en enviar la petició:", err);
       } finally {
         setIsSubmitting(false);
       }
     };
-
+  
     submitRequest();
   }, [authToken, navigate]);
-
+  
   if (isSubmitting) {
     return <p>Enviant les dades...</p>;
   }

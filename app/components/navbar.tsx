@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useLoaderData, Link } from "@remix-run/react";
-import axios from "axios";
-
+import LogoutButton from "./LogoutButton";
 const Navbar: React.FC = () => {
   const data = useLoaderData<{
     user: {
@@ -22,9 +21,36 @@ const Navbar: React.FC = () => {
     };
   }>();
 
-  const [user, setUser] = useState(data.user.data[0]);
+
+  const [role, setRole] = useState(data.user.data[0].super);
   const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false); // State for managing mobile menu
+
+  const toggleRole = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost/api/profile/toggle-role", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || "",
+        },
+        credentials: "include",
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setRole((prevRole) => (prevRole === "dj" ? "client" : "dj"));
+      } else {
+        console.error(result);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [user] = useState(data.user.data[0]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleMenu = () => setMenuOpen(!menuOpen);
 
@@ -56,10 +82,46 @@ const Navbar: React.FC = () => {
               >
                 Sol·licituds de Cançons
               </Link>
+              <button
+                onClick={toggleRole}
+                disabled={loading}
+                className={`px-4 py-2 text-white rounded-md ${
+                  role === "dj" ? "bg-blue-500 hover:bg-blue-600" : "bg-green-500 hover:bg-green-600"
+                }`}
+              >
+                {loading ? "Processing..." : `Switch to ${role === "dj" ? "Client" : "DJ"} Role`}
+              </button>
               <span className="text-gray-600 dark:text-gray-400">
                 Rol actual del Usuari: {user.role === "dj" ? "DJ" : "Usuari"}
               </span>
             </div>
+          </div>
+
+          {/* Right-Side Options */}
+          <div className="hidden md:flex items-center space-x-6">
+            <Link
+              to="/profileedit"
+              className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+            >
+              Profile
+            </Link>
+
+            {user.super === "admin" && (
+              <Link
+                to="/adminhome"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            
+
+            <LogoutButton />
+            <img
+              src={user.image}
+              alt="Profile"
+              className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600"
+            />
           </div>
 
           {/* Mobile Menu Button */}
@@ -84,59 +146,6 @@ const Navbar: React.FC = () => {
               </svg>
             </button>
           </div>
-
-          {/* User Settings Dropdown */}
-          <div className="hidden md:flex items-center space-x-4">
-            <img
-              src={user.image}
-              alt="Profile"
-              className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600"
-            />
-            <div className="relative">
-              <button
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition"
-                disabled={loading}
-              >
-                <span>{user.name}</span>
-                <svg
-                  className="ml-2 h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md">
-                <Link
-                  to="/profile/edit"
-                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                >
-                  Profile
-                </Link>
-
-                {user.super === "admin" && (
-                  <Link
-                    to="/admin/home"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                  >
-                    Admin Dashboard
-                  </Link>
-                )}
-                <button
-                  onClick={() => axios.post("/logout", {}, { withCredentials: true })}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
-                >
-                  Log Out
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -154,9 +163,23 @@ const Navbar: React.FC = () => {
             >
               Sol·licituds de Cançons
             </Link>
-            <span className="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-              Rol actual del Usuari: {user.role === "dj" ? "DJ" : "Usuari"}
-            </span>
+            <Link
+              to="/profileedit"
+              className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
+            >
+              Profile
+            </Link>
+            {user.super === "admin" && (
+              <Link
+                to="/adminhome"
+                className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            <div className="block px-4 py-2">
+              <LogoutButton />
+            </div>
           </div>
         )}
       </div>

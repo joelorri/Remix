@@ -1,5 +1,4 @@
 import axios from "axios";
-import { request } from "node_modules/axios/index.cjs";
 import { ProfileSearchResult } from "types/interfaces";
 
 
